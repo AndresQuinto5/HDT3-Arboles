@@ -1,5 +1,5 @@
 ---
-title: "HDT3-Arboles de desicion"
+title: "HDT3-Arboles de decision"
 author: "Andres Quinto, Mirka Monzon, Oscar De Leon"
 date: "04/03/2022"
 output: 
@@ -12,4 +12,11 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+```{r}
+datos = read.csv("./train.csv")
+```
+
+Hoja de trabajo #3 - Arboles de dicision 
+
 
