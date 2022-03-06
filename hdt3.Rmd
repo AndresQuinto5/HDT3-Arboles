@@ -11,6 +11,8 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(rpart)
+library(rpart.plot)
 ```
 
 ```{r}
@@ -19,4 +21,19 @@ datos = read.csv("./train.csv")
 
 Hoja de trabajo #3 - Arboles de dicision 
 
+4. Dependiendo del análisis exploratorio elaborado cree una variable respuesta que le permita clasificar las casas en Económicas, Intermedias o Caras. Los límites de estas clases deben tener un fundamento en la distribución de los datos de precios, y estar bien explicados.
 
+```{r set, echo=FALSE}
+# variable respuesta 
+porciento <- 70/100
+
+datos$clasificacion <- ifelse(datos$SalePrice <= 251000, "Economicas", ifelse(datos$SalePrice <= 538000, "Intermedias", ifelse(datos$SalePrice <= 755000, "Caras")))
+
+set.seed(123)
+trainRowsNumber<-sample(1:nrow(datos),porciento*nrow(datos))
+train<-datos[trainRowsNumber,]
+test<-datos[-trainRowsNumber,]
+arbolModelo<-rpart(SalePrice~.,datos,method = "anova")
+rpart.plot(arbolModelo)
+
+```
