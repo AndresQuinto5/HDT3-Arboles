@@ -23,6 +23,10 @@ Hoja de trabajo #3 - Arboles de dicision
 
 4. Dependiendo del análisis exploratorio elaborado cree una variable respuesta que le permita clasificar las casas en Económicas, Intermedias o Caras. Los límites de estas clases deben tener un fundamento en la distribución de los datos de precios, y estar bien explicados.
 
+Realizando un summary es posible determinar los limites superiores e inferiores de cada grupo, de esta forma podemos ver las divisiones de forma notable entre cada grupo de los datos. Con la ayuda de esta informacion determinamos lo siguiente:
+
+Las divisiones en los precios van de 251000 a 538000, es decir que cualquier casa por debajo del primero se considera económica en relación a las demás, las que se encuentran entre ambos datos son intermedias y las que estan por encima del segundo son las caras
+
 ```{r set, echo=FALSE}
 # variable respuesta 
 porciento <- 70/100
