@@ -13,13 +13,368 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 library(rpart)
 library(rpart.plot)
+library(dplyr) #Para usar select
+library(fpc) #Para la gráficas 
+library(cluster) #Para la siluetas
+library("ggpubr") #Para regresiones
+library(mclust)
+library(caret)
+library(tree)
+library(randomForest)
+library(plyr)
+library("stats")
+library("datasets")
+library("prediction")
 ```
 
 ```{r}
 datos = read.csv("./train.csv")
+test<- read.csv("./test.csv", stringsAsFactors = FALSE)
+#Selected rows
+housesFilter <-select(datos, LotFrontage, LotArea, YearBuilt, YearRemodAdd, MasVnrArea, BsmtFinSF1,BsmtFinSF2,BsmtUnfSF,TotalBsmtSF,X1stFlrSF,X2ndFlrSF,LowQualFinSF,GrLivArea,TotRmsAbvGrd,Fireplaces,GarageYrBlt,GarageCars,GarageArea,WoodDeckSF,OpenPorchSF,EnclosedPorch,ScreenPorch,PoolArea,MoSold,YrSold,SalePrice)
+#Data cleanup
+housesFilter <- na.omit(housesFilter)
+
+# Resumen de variables
+summary(housesFilter)
+
 ```
 
 Hoja de trabajo #3 - Arboles de dicision 
+
+2. Haga un análisis exploratorio extenso de los datos. Explique bien todos los hallazgos. No 
+ponga solo gráficas y código. Debe llegar a conclusiones interesantes para poder predecir.
+Explique el preprocesamiento que necesitó hacer
+
+## Graficas para cada una de las variables.
+
+### Variable LotFrontage
+```{r}
+plot(housesFilter$LotFrontage, housesFilter$SalePrice)
+hist(housesFilter$LotFrontage)
+qqnorm(housesFilter$LotFrontage)
+qqline(housesFilter$LotFrontage, col='red')
+```
+
+#### Esta variable describe: los metros lineales de la calle conectados a la propiedad. cuenta con un sesgo positivo, los datos estan ligeramente normalizados y no tienen una relacion directa con el precio de venta.
+
+### Variable LotArea
+```{r}
+plot(housesFilter$LotArea, housesFilter$SalePrice)
+hist(housesFilter$LotArea)
+qqnorm(housesFilter$LotArea)
+qqline(housesFilter$LotArea, col='red')
+```
+
+####  Esta variable describe el tamaño del lote en mtros cuadrado. Cuenta con un sesgo positivo, pero los datos no están del todo normalizados por lo que no tienen una relacion directa con el precio de venta 
+
+### Variable YearBuilt
+```{r}
+plot(housesFilter$YearBuilt,  housesFilter$SalePrice)
+hist(housesFilter$YearBuilt)
+qqnorm(housesFilter$YearBuilt)
+qqline(housesFilter$YearBuilt, col='red')
+```
+
+#####  Esta variable describe el año de construccion. Cuenta con un sesgo negativo, pero los datos están normalizados en una porción de datos y se puede decir que en los ultimo años se ha aumentado el precio de venta.
+
+### Variable YearRemoAdd
+
+```{r}
+plot(housesFilter$YearRemodAdd,  housesFilter$SalePrice)
+hist(housesFilter$YearRemodAdd)
+qqnorm(housesFilter$YearRemodAdd)
+qqline(housesFilter$YearRemodAdd, col='red')
+```
+
+####  Año de remodelación. Como se muesta en el histograma no muestra datos significativos y los datos no están normalizados por lo no tiene una relación directa con el precio de venta.
+
+### Variable MasVnArea
+```{r}
+plot(housesFilter$MasVnrArea,  housesFilter$SalePrice)
+hist(housesFilter$MasVnrArea)
+qqnorm(housesFilter$MasVnrArea)
+qqline(housesFilter$MasVnrArea, col='red')
+```
+
+####  Se muestra con un sesgo positivo pero los dato no estan normalizdos, por lo cual no tienen una relación directa con el precio de venta. (importante)
+
+### Variable BsmFinSF1.
+```{r}
+plot(housesFilter$BsmtFinSF1, housesFilter$SalePrice)
+hist(housesFilter$BsmtFinSF1)
+qqnorm(housesFilter$BsmtFinSF1)
+qqline(housesFilter$BsmtFinSF1, col='red')
+```
+
+#### Esta variable indica los metros cuadrados terminados tipo 1. Según la gráfica, muestra una sesgo positivo y los datos se muestran normalizados. En el data set se muestra dos ceros, pero se ignoran y por lo tanto, no tienen relación directa con el precio de venta.
+
+### Variable BsmFinSF2.
+
+```{r}
+plot(housesFilter$BsmtFinSF2, housesFilter$SalePrice)
+hist(housesFilter$BsmtFinSF2)
+qqnorm(housesFilter$BsmtFinSF2)
+qqline(housesFilter$BsmtFinSF2, col='red')
+```
+
+####  Esta variable indica los metros cuadrados terminados de tipo 2. Muestra un sesgo positivo, pero los datos no están normalizados por lo que no tiene una relacion directa con el precio de venta.
+
+### Variable BsmtUnfSF
+```{r}
+plot(housesFilter$BsmtUnfSF, housesFilter$SalePrice)
+hist(housesFilter$BsmtUnfSF)
+qqnorm(housesFilter$BsmtUnfSF)
+qqline(housesFilter$BsmtUnfSF, col='red')
+```
+
+####  Esta variable muestra en la grafica un sesgo positivo y los datos se muestran normalizados, por lo que la relacion con el precio de venta es muy pequeña.
+
+### Variable TotalBsmtSF
+```{r}
+plot(housesFilter$TotalBsmtSF, housesFilter$SalePrice)
+hist(housesFilter$TotalBsmtSF)
+qqnorm(housesFilter$TotalBsmtSF)
+qqline(housesFilter$TotalBsmtSF, col='red')
+```
+####  La variable describe los metros cuadradso totales de un sótano. Ademas la variable muestra un poco de simetría y los datos se muestran normalizados. Por lo que si tienen una relación directa con el precio de venta.
+
+### Variable X1stFlrSF
+```{r}
+plot(housesFilter$X1stFlrSF, housesFilter$SalePrice)
+hist(housesFilter$X1stFlrSF)
+qqnorm(housesFilter$X1stFlrSF)
+qqline(housesFilter$X1stFlrSF, col='red')
+```
+
+####  Esta variable representa los metros cuadrados del primer piso. La variable muestra poca simetria y los datos se muestran normalizados, por lo que si tiene una relación directa con el precio de venta.
+
+### Variable X2ndFlrSF
+```{r}
+plot(housesFilter$X2ndFlrSF, housesFilter$SalePrice)
+hist(housesFilter$X2ndFlrSF)
+qqnorm(housesFilter$X2ndFlrSF)
+qqline(housesFilter$X2ndFlrSF, col='red')
+```
+
+####  Esta variable representa los mteros cuadrados del segundo piso. Contiene tres 0 en el data set, por lo que si se omiten esos ceros va a mostrar simetría. Ademas con esto los datos se muestran un poco normalizados. Por lo que si tienen una relaciín directa con el precio de venta.
+
+### Variable LowQualFinSF
+```{r}
+plot(housesFilter$LowQualFinSF, housesFilter$SalePrice)
+hist(housesFilter$LowQualFinSF)
+qqnorm(housesFilter$LowQualFinSF)
+qqline(housesFilter$LowQualFinSF, col='red')
+```
+
+#### Esta variable representa cantidad de metros cuadraso de baj calidad. Como se presentan en las gráficas y en los datos del dataset, estos datos no son capaces de ser analizados formalmente.
+
+### Variable GrLivArea
+```{r}
+plot(housesFilter$GrLivArea, housesFilter$SalePrice)
+hist(housesFilter$GrLivArea)
+qqnorm(housesFilter$GrLivArea)
+qqline(housesFilter$GrLivArea, col='red')
+```
+
+#### Esta es el área del primer piso. Esta variable muestra simetría y los datos se muestran normalizados por lo que se muestra que tienen una relación directa con el precio de venta.
+
+### Variable TotRmsAbvGrd
+```{r}
+plot(housesFilter$TotRmsAbvGrd, housesFilter$SalePrice)
+hist(housesFilter$TotRmsAbvGrd)
+qqnorm(housesFilter$TotRmsAbvGrd)
+qqline(housesFilter$TotRmsAbvGrd, col='red')
+```
+
+##### Esta variable representa la cantidad de metros cuadrados de área en el sotano. Presenta simetría, pero debido a que son datos categoricos no se pueden realizar un analisis más detallado acerca de está variable.
+
+### Variable Fireplaces
+```{r}
+plot(housesFilter$Fireplaces, housesFilter$SalePrice)
+hist(housesFilter$Fireplaces)
+qqnorm(housesFilter$Fireplaces)
+qqline(housesFilter$Fireplaces, col='red')
+```
+
+##### La variable son la cantidad de chimeneas en la casa. Estos son datos categoricos por los que no tienen una relacion directa con los precios de venta.
+
+### Variable GarageYrBlt
+```{r}
+plot(housesFilter$GarageYrBlt, housesFilter$SalePrice)
+hist(housesFilter$GarageYrBlt)
+qqnorm(housesFilter$GarageYrBlt)
+qqline(housesFilter$GarageYrBlt, col='red')
+```
+
+##### Esta variable representa el año en el que el garage fue construido, se puede observar que existe una relacion bastate clara con el precio de venta aunque el final no se vuelve un poco extraña.
+
+### Variable GarageCars
+```{r}
+plot(housesFilter$GarageCars, housesFilter$SalePrice)
+hist(housesFilter$GarageCars)
+qqnorm(housesFilter$GarageCars)
+qqline(housesFilter$GarageCars, col='red')
+```
+
+##### La variable son el tamaño del garage dependiendo de la capacidad de autos que entren. Estos son datos categoricos por los que no tienen una relacion directa con los precios de venta.
+
+### Variable GarageArea
+```{r}
+plot(housesFilter$GarageArea, housesFilter$SalePrice)
+hist(housesFilter$GarageArea)
+qqnorm(housesFilter$GarageArea)
+qqline(housesFilter$GarageArea, col='red')
+```
+
+#####  Esta variable representa el tamaño del garage en pies cuadrados, se puede observar que existe una relacion bastate clara con el precio de venta.v
+
+### Variable WoodDeckSF
+```{r}
+plot(housesFilter$WoodDeckSF, housesFilter$SalePrice)
+hist(housesFilter$WoodDeckSF)
+qqnorm(housesFilter$WoodDeckSF)
+qqline(housesFilter$WoodDeckSF, col='red')
+```
+##### Esta variable representa el area de la entrada con piso de madera en pies cuadrados, se puede observar que existe una relacion extraña al principio de grafica ya que agunos datos son cero, pero luego podemos observar como se va relacionando al precio de venta.
+
+### Variable OpenPorchSF
+```{r}
+plot(housesFilter$OpenPorchSF, housesFilter$SalePrice)
+hist(housesFilter$OpenPorchSF)
+qqnorm(housesFilter$OpenPorchSF)
+qqline(housesFilter$OpenPorchSF, col='red')
+```
+##### La variable representa el area de la entrada en concepto abierto en pies cuadrados, se puede observar que existe una relacion extraña al principio de grafica ya que la mayoria de datos son cero, pero luego podemos observar como se va relacionando al precio de venta.
+
+### Variable EnclosedPorch
+```{r}
+plot(housesFilter$EnclosedPorch, housesFilter$SalePrice)
+hist(housesFilter$EnclosedPorch)
+qqnorm(housesFilter$EnclosedPorch)
+qqline(housesFilter$EnclosedPorch, col='red')
+```
+
+#####  Esta variable representa el area de la entrada en concepto cerrado en pies cuadrados, se puede observar que existe una relacion extraña al final de la grafica ya que la mayoria de datos son cero.
+
+### Variable ScreenPorch
+```{r}
+plot(housesFilter$ScreenPorch, housesFilter$SalePrice)
+hist(housesFilter$ScreenPorch)
+qqnorm(housesFilter$ScreenPorch)
+qqline(housesFilter$ScreenPorch, col='red')
+```
+
+##### Esta variable representa el area de la entrada en concepto de vidrio en pies cuadrados, se puede observar que existe una relacion extraña al final de la grafica y que la mayoria de datos son cero. 
+
+### Variable PoolArea
+```{r}
+plot(housesFilter$PoolArea, housesFilter$SalePrice)
+hist(housesFilter$PoolArea)
+qqnorm(housesFilter$PoolArea)
+qqline(housesFilter$PoolArea, col='red')
+```
+
+##### Esta variable representa el area de la pisciona en pies cuadrados, se puede observar que existe una relacion muy pequeña ya que la mayoria de datos son cero, por lo que que no se puede hacer un analisis tan extenso.
+
+### Variable MoSold
+```{r}
+plot(housesFilter$MoSold, housesFilter$SalePrice)
+hist(housesFilter$MoSold)
+qqnorm(housesFilter$MoSold)
+qqline(housesFilter$MoSold, col='red')
+```
+
+##### Esta variable son los meses de venta. Estos son datos categoricos por los que no tienen una relacion directa con los precios de venta.Lo unico que podemos decir es que juno es el mes con mas ventas. 
+
+### Variable YrSold
+```{r}
+plot(housesFilter$YrSold, housesFilter$SalePrice)
+hist(housesFilter$YrSold)
+qqnorm(housesFilter$YrSold)
+qqline(housesFilter$YrSold, col='red')
+```
+
+##### La siguiente variable son los años de venta. Estos son datos categoricos por los que no tienen una relacion directa con los precios de venta.Lo unico que podemos decir es que en 2009 fue el año con mas ventas. 
+
+## Pregunta 3 Analisis de grupos
+```{r}
+# con k-medias
+cluster <- housesFilter
+km<-kmeans(housesFilter,3)
+housesFilter$grupo<-km$cluster
+
+plotcluster(cluster,km$cluster) #Realiza una grafica con la ubicación de los clusters
+
+#Usando el método de la silueta para las k-medias
+silkm<-silhouette(km$cluster,dist(housesFilter))
+mean(silkm[,3]) #Silueta de 0.561677
+
+g1<- housesFilter[housesFilter$grupo==1,]
+prop.table(table(g1$Species))*100
+g2<- housesFilter[housesFilter$grupo==2,]
+prop.table(table(g2$Species))*100
+g3<- housesFilter[housesFilter$grupo==3,]
+prop.table(table(g3$Species))*100
+
+summary(g1)
+summary(g2)
+summary(g3)
+```
+
+##### Para el caso del analisis de grupos, se tomo cada una de las variables analizadas anteriormente, se realizo un cluster con el algortimo de K-Means. Ademas se muestra en esta parte las variables que se consideran que si influyen en el precio de una casa y se muestran las medidas de tendencia central de cada una de las variables consideradas.
+
+
+```{r}
+# Prueba 1
+##La correlacion entre las variables independientes y los precios de venta:
+cor(housesFilter$YearBuilt, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$YearRemodAdd, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$TotalBsmtSF, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$X1stFlrSF, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$GrLivArea, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$TotRmsAbvGrd, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$GarageCars, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$GarageArea, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+#Selected rows
+housesFilter <-select(datos,TotalBsmtSF,X1stFlrSF,GrLivArea,GarageCars,GarageArea,SalePrice)
+#Data cleanup
+housesFilter <- na.omit(housesFilter)
+#k-medias
+cluster <- housesFilter
+km<-kmeans(housesFilter,3)
+housesFilter$grupo<-km$cluster
+
+plotcluster(cluster,km$cluster) #grafica la ubicación de los clusters
+#Método de las siluetas para las k-medias
+silkm<-silhouette(km$cluster,dist(housesFilter))
+mean(silkm[,3]) #Siluetas de 0.562137
+
+```
+
+```{r}
+#Prueba 2
+cor(housesFilter$TotalBsmtSF, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$X1stFlrSF, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$GrLivArea, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$GarageCars, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+cor(housesFilter$GarageArea, housesFilter$SalePrice, method = c("pearson", "kendall", "spearman"))
+#Selected rows
+housesFilter <-select(datos,TotalBsmtSF,X1stFlrSF,GrLivArea,GarageCars,GarageArea,SalePrice)
+#Data cleanup
+housesFilter <- na.omit(housesFilter)
+#k-medias
+cluster <- housesFilter
+km<-kmeans(housesFilter,3)
+housesFilter$grupo<-km$cluster
+
+plotcluster(cluster,km$cluster) #grafica la ubicación de los clusters
+#Método de la silueta para las k-medias
+silkm<-silhouette(km$cluster,dist(housesFilter))
+mean(silkm[,3]) #Silueta de 0.562137
+```
+
+##### Dado que el valor de la silueta disminuye en los clusteres, la silueta no mejora.
 
 4. Dependiendo del análisis exploratorio elaborado cree una variable respuesta que le permita clasificar las casas en Económicas, Intermedias o Caras. Los límites de estas clases deben tener un fundamento en la distribución de los datos de precios, y estar bien explicados.
 
@@ -27,17 +382,12 @@ Realizando un summary es posible determinar los limites superiores e inferiores 
 
 Las divisiones en los precios van de 251000 a 538000, es decir que cualquier casa por debajo del primero se considera económica en relación a las demás, las que se encuentran entre ambos datos son intermedias y las que estan por encima del segundo son las caras
 
-```{r set, echo=FALSE}
-# variable respuesta 
-porciento <- 70/100
+por ende, determinamos con una variable nueva en nuestra base de datos llamada "clasification" para poder etiquetar y ordenar cada una de las casas segun perteneza a su rango de precio.
 
-datos$clasificacion <- ifelse(datos$SalePrice <= 251000, "Economicas", ifelse(datos$SalePrice <= 538000, "Intermedias", ifelse(datos$SalePrice <= 755000, "Caras")))
-
-set.seed(123)
-trainRowsNumber<-sample(1:nrow(datos),porciento*nrow(datos))
-train<-datos[trainRowsNumber,]
-test<-datos[-trainRowsNumber,]
-arbolModelo<-rpart(SalePrice~.,datos,method = "anova")
-rpart.plot(arbolModelo)
-
+```{r}
+datos$clasification <- ifelse(datos$SalePrice > 290000, "Caras", ifelse(datos$SalePrice>170000, "Intemedia", "Economicas"))
+table(datos$clasification)
 ```
+
+
+
