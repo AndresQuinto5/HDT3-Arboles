@@ -457,9 +457,41 @@ library(rpart.plot)
 prp(arbol_3, main="Arbol de Regresion", nn=TRUE, fallen.leaves = TRUE, shadow.col = "green", branch.lty = 3, branch = .5, faclen = 0, trace = 1, split.cex = 0.8, split.box.col = "lightblue", split.border.col = "blue", split.round = 0.5)
 ```
 
+8. Utilice  el  modelo  con  el  conjunto  de  prueba  y  determine  la  eficiencia  del  algoritmo  para clasificar y predecir, en dependencia de las características de la variable respuesta.
 
+```{r}
+library(rpart)
+set_prueba <- set_prueba[, !(names(set_prueba) %in% drop)]
+arbol_4 <- rpart(SalePrice ~ ., data = set_prueba)
+```
 
+```{r}
+library(rpart.plot)
+rpart.plot(arbol_4)
+```
+Para este modelo se utilizo el set de prueba, en dependencia de las características de la variable respuesta, como se puede ver el arbol nos muesta variables concordantes a nunestra clasificacion de casas caras, intermedias y economicas, cojunto otras variables relacionadas. 
 
+9. Haga un análisis de la eficiencia del algoritmo usando una matriz de confusión para el árbol de clasificación. Tenga en cuenta la efectividad, donde el algoritmo se equivocó más, donde se equivocó menos y la importancia que tienen los errores.
+
+```{r}
+library(caret)
+#prediccion_1 <- predict(arbol_1, newdata = set_prueba, type = "class")
+#confusionMatrix(prediccion_1, set_prueba[["clasificacion"]])
+
+```
+
+10. Analice el desempeño del árbol de regresión.
+
+De acuerdo a los dos modelos que obtuvimos se puede observar que los datos son acordes a lo que se pidio, en el primero tenemos los sales price, el rango indicado para las casas economicas y el rango mayor para las casas intermedias y caras. Ahora en el segundo arbol de regresion podemos ver que esta la clasificacion para casas economicas e intermedias, cada una con sus respectivas variables y cantidades. 
+
+11. Repita  los  análisis  usando  random  forest  como  algoritmo  de  predicción,  explique  sus resultados comparando ambos algoritmos.
+
+```{r}
+library(randomForest)
+#modelo <- randomForest(clasification ~., data = set_entrenamiento)
+#prediccion_2 <- predict(modelo, set_prueba)
+#(mc <- with(datos.test,table(predicciones, clasification)))
+```
 
 
 
